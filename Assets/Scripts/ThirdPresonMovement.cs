@@ -26,33 +26,26 @@ public class ThirdPresonMovement : MonoBehaviour
     public Vector3 yDisplacement = new Vector3(0f, 5f, 0f);
     public bool isAbove = true;
     // Update is called once per frame
-    void Update()
+    void FixedUpdate()
     {
-        if(isAbove)
+       /* if(transform.position.y>=0)
         {
-            gravity = -Mathf.Abs(gravity);
-            Check = groundCheck;
-            cine.m_Orbits[1].m_Height = 45;
-            transform.position = yDisplacement;
-            if (isGrounded && velocity.y < 0)
-            {
-                velocity.y = -2f;
-            }
+            isAbove = true;
         }
         else
         {
-            gravity = Mathf.Abs(gravity);
-            Check = ceilingCheck;
-            cine.m_Orbits[1].m_Height = -45;
-            transform.position = -yDisplacement;
-            if (isGrounded && velocity.y > 0)
-            {
-                velocity.y = 2f;
-            }
+            isAbove=false;
+        }*/
+
+
+        if(Input.GetKeyDown(KeyCode.Space))
+        {
+            print("spaced");
+            DimensionChanged();
         }
 
-        isGrounded = Physics.CheckSphere(Check.position, groundDistance, groundMask);
-
+        isGrounded = Physics.CheckSphere(groundCheck.position, groundDistance, groundMask);
+       // print(isGrounded);
         
 
         float horizontal = Input.GetAxisRaw("Horizontal");
@@ -72,4 +65,55 @@ public class ThirdPresonMovement : MonoBehaviour
         velocity.y += gravity * Time.deltaTime;
         controller.Move(velocity * Time.deltaTime);
     }
+
+    public void DimensionChanged()
+    {
+
+        if (!isAbove)
+        {
+            gravity = -Mathf.Abs(gravity);
+            Check = groundCheck;
+            cine.m_Orbits[1].m_Height = 45;
+            //gameObject.transform.position = new Vector3(transform.position.x, 5, transform.position.z);
+            //PlayerDimensionChange(yDisplacement);
+            if (isGrounded && velocity.y < 0)
+            {
+                print("isGounded");
+                velocity.y = -2f;
+            }
+            isAbove = true;
+        }
+        else
+        {
+            gravity = Mathf.Abs(gravity);
+            Check = ceilingCheck;
+            cine.m_Orbits[1].m_Height = -45;
+            //gameObject.transform.position = new Vector3(transform.position.x, -5, transform.position.z);
+            //PlayerDimensionChange(-yDisplacement);
+            if (isGrounded && velocity.y > 0)
+            {
+                velocity.y = 2f;
+            }
+            isAbove = false;
+        }
+    }
+
+    public void PlayerDimensionChange(Vector3 newPos)
+    {
+        Vector3 newPosition = newPos;
+        Vector3 initialPos = gameObject.transform.position;
+        float timeSinceStarted = 0f;
+        while (true)
+        {
+            timeSinceStarted += Time.deltaTime;
+            gameObject.transform.position = Vector3.Lerp(gameObject.transform.position, (initialPos + newPosition), timeSinceStarted);
+
+            // If the object has arrived, stop the coroutine
+            if (transform.position == (initialPos + newPosition))
+            {
+                break;
+            }
+        }
+    }
+
 }
