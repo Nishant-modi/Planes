@@ -1,6 +1,8 @@
+using Cinemachine;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 public class ThirdPresonMovement : MonoBehaviour
 {
@@ -10,24 +12,48 @@ public class ThirdPresonMovement : MonoBehaviour
     [SerializeField] private float speed = 6f;
     [SerializeField] private float turnSmoothTime = 0.1f;
     private float turnSmoothVelocity;
+    public CinemachineFreeLook cine;
 
     Vector3 velocity;
     public float gravity = -9.81f;
 
     public Transform groundCheck;
     public Transform ceilingCheck;
+    private Transform Check;
     public float groundDistance = 0.4f;
     public LayerMask groundMask;
     bool isGrounded;
+    public Vector3 yDisplacement = new Vector3(0f, 5f, 0f);
+    public bool isAbove = true;
     // Update is called once per frame
     void Update()
     {
-        isGrounded = Physics.CheckSphere(groundCheck.position, groundDistance, groundMask);
-
-        if(isGrounded && velocity.y<0)
+        if(isAbove)
         {
-            velocity.y = -2f;
+            gravity = -Mathf.Abs(gravity);
+            Check = groundCheck;
+            cine.m_Orbits[1].m_Height = 45;
+            transform.position = yDisplacement;
+            if (isGrounded && velocity.y < 0)
+            {
+                velocity.y = -2f;
+            }
         }
+        else
+        {
+            gravity = Mathf.Abs(gravity);
+            Check = ceilingCheck;
+            cine.m_Orbits[1].m_Height = -45;
+            transform.position = -yDisplacement;
+            if (isGrounded && velocity.y > 0)
+            {
+                velocity.y = 2f;
+            }
+        }
+
+        isGrounded = Physics.CheckSphere(Check.position, groundDistance, groundMask);
+
+        
 
         float horizontal = Input.GetAxisRaw("Horizontal");
         float vertical = Input.GetAxisRaw("Vertical");
