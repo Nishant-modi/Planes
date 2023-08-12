@@ -27,16 +27,21 @@ public class ThirdPresonMovement : MonoBehaviour
     public Vector3 yDisplacement = new Vector3(0f, 5f, 0f);
     public bool isAbove = true;
     Coroutine gravCoroutine;
+    Vector3 direction = Vector3.zero;
+    bool canMove;
 
     private void Start()
     {
         Check = groundCheck;
+        canMove = true;
         gravCoroutine = StartCoroutine(Gravity());
     }
 
     IEnumerator Gravity()
     {
-        while(true)
+        yield return new WaitForSeconds(0.1f);
+        canMove = true;
+        while (true)
         {
             velocity.y += gravity * Time.deltaTime;
             controller.Move(velocity * Time.deltaTime);
@@ -47,16 +52,9 @@ public class ThirdPresonMovement : MonoBehaviour
     }
 
     // Update is called once per frame
-    void FixedUpdate()
+    void Update()
     {
-        /* if(transform.position.y>=0)
-         {
-             isAbove = true;
-         }
-         else
-         {
-             isAbove=false;
-         }*/
+        
 
         if (isAbove)
         {
@@ -75,19 +73,27 @@ public class ThirdPresonMovement : MonoBehaviour
             }
         }
 
-            if (Input.GetKeyDown(KeyCode.Space))
-        {
-            print("spaced");
-            StartCoroutine(DimensionChanged());
-        }
-
-        isGrounded = Physics.CheckSphere(Check.position, groundDistance, groundMask);
-       // print(isGrounded);
-        
-
         float horizontal = Input.GetAxisRaw("Horizontal");
         float vertical = Input.GetAxisRaw("Vertical");
-        Vector3 direction = new Vector3(horizontal, 0f , vertical).normalized;
+
+        
+
+        if (Input.GetKeyDown(KeyCode.Space))
+        {
+            canMove = false;
+            print("spaced");
+            //StartCoroutine(DimensionChanged());
+            DimensionChanged();
+        }
+
+        if(canMove)
+        {
+            direction = new Vector3(horizontal, 0f, vertical).normalized;
+        }
+
+
+        isGrounded = Physics.CheckSphere(Check.position, groundDistance, groundMask);
+
 
         if(direction.magnitude > 0.1)
         {
@@ -105,15 +111,16 @@ public class ThirdPresonMovement : MonoBehaviour
         //print(" " + gameObject.transform.position + " " + gameObject.name);
     }
 
-    public IEnumerator DimensionChanged()
+    public void DimensionChanged()
     {
         StopCoroutine(gravCoroutine);
         if (!isAbove)
         {
+            transform.position = new Vector3(tpc.transform.position.x, 5, tpc.transform.position.z);
             gravity = -Mathf.Abs(gravity);
             Check = groundCheck;
             cine.m_Orbits[1].m_Height = 45;
-            transform.position = new Vector3(tpc.transform.position.x, 5, tpc.transform.position.z);
+            
             print(" " + tpc.transform.position + " " + tpc.name);
             //PlayerDimensionChange(yDisplacement);
 
@@ -121,18 +128,20 @@ public class ThirdPresonMovement : MonoBehaviour
         }
         else
         {
+            transform.position = new Vector3(tpc.transform.position.x, -5, tpc.transform.position.z);
             gravity = Mathf.Abs(gravity);
             Check = ceilingCheck;
             cine.m_Orbits[1].m_Height = -45;
-            transform.position = new Vector3(tpc.transform.position.x, -5, tpc.transform.position.z);
+            
             print(" " + tpc.transform.position + " " + tpc.name);
             //PlayerDimensionChange(-yDisplacement);
             
             isAbove = false;
         }
-        yield return new WaitForSeconds(1f);
+        
         gravCoroutine = StartCoroutine(Gravity());
-        yield return null;
+        
+        //yield return null;
     }
 
     public void PlayerDimensionChange(Vector3 newPos)
