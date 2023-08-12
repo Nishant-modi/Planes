@@ -7,6 +7,7 @@ using UnityEngine.InputSystem;
 public class ThirdPresonMovement : MonoBehaviour
 {
     [SerializeField] private CharacterController controller;
+    [SerializeField] private GameObject tpc;
     [SerializeField] private Transform cam;
 
     [SerializeField] private float speed = 6f;
@@ -25,26 +26,62 @@ public class ThirdPresonMovement : MonoBehaviour
     bool isGrounded;
     public Vector3 yDisplacement = new Vector3(0f, 5f, 0f);
     public bool isAbove = true;
+    Coroutine gravCoroutine;
+
+    private void Start()
+    {
+        Check = groundCheck;
+        gravCoroutine = StartCoroutine(Gravity());
+    }
+
+    IEnumerator Gravity()
+    {
+        while(true)
+        {
+            velocity.y += gravity * Time.deltaTime;
+            controller.Move(velocity * Time.deltaTime);
+            yield return null;
+        }
+        
+        
+    }
+
     // Update is called once per frame
     void FixedUpdate()
     {
-       /* if(transform.position.y>=0)
+        /* if(transform.position.y>=0)
+         {
+             isAbove = true;
+         }
+         else
+         {
+             isAbove=false;
+         }*/
+
+        if (isAbove)
         {
-            isAbove = true;
+            if (isGrounded && velocity.y < 0)
+            {
+                print("isGounded");
+                velocity.y = -2f;
+            }
         }
         else
         {
-            isAbove=false;
-        }*/
-
-
-        if(Input.GetKeyDown(KeyCode.Space))
-        {
-            print("spaced");
-            DimensionChanged();
+            if (isGrounded && velocity.y > 0)
+            {
+                print("isCeiled");
+                velocity.y = 2f;
+            }
         }
 
-        isGrounded = Physics.CheckSphere(groundCheck.position, groundDistance, groundMask);
+            if (Input.GetKeyDown(KeyCode.Space))
+        {
+            print("spaced");
+            StartCoroutine(DimensionChanged());
+        }
+
+        isGrounded = Physics.CheckSphere(Check.position, groundDistance, groundMask);
        // print(isGrounded);
         
 
@@ -62,25 +99,24 @@ public class ThirdPresonMovement : MonoBehaviour
             controller.Move(moveDir.normalized * speed * Time.deltaTime);
         }
 
-        velocity.y += gravity * Time.deltaTime;
-        controller.Move(velocity * Time.deltaTime);
+        //velocity.y += gravity * Time.deltaTime;
+        //controller.Move(velocity * Time.deltaTime);
+
+        //print(" " + gameObject.transform.position + " " + gameObject.name);
     }
 
-    public void DimensionChanged()
+    public IEnumerator DimensionChanged()
     {
-
+        StopCoroutine(gravCoroutine);
         if (!isAbove)
         {
             gravity = -Mathf.Abs(gravity);
             Check = groundCheck;
             cine.m_Orbits[1].m_Height = 45;
-            //gameObject.transform.position = new Vector3(transform.position.x, 5, transform.position.z);
+            transform.position = new Vector3(tpc.transform.position.x, 5, tpc.transform.position.z);
+            print(" " + tpc.transform.position + " " + tpc.name);
             //PlayerDimensionChange(yDisplacement);
-            if (isGrounded && velocity.y < 0)
-            {
-                print("isGounded");
-                velocity.y = -2f;
-            }
+
             isAbove = true;
         }
         else
@@ -88,14 +124,15 @@ public class ThirdPresonMovement : MonoBehaviour
             gravity = Mathf.Abs(gravity);
             Check = ceilingCheck;
             cine.m_Orbits[1].m_Height = -45;
-            //gameObject.transform.position = new Vector3(transform.position.x, -5, transform.position.z);
+            transform.position = new Vector3(tpc.transform.position.x, -5, tpc.transform.position.z);
+            print(" " + tpc.transform.position + " " + tpc.name);
             //PlayerDimensionChange(-yDisplacement);
-            if (isGrounded && velocity.y > 0)
-            {
-                velocity.y = 2f;
-            }
+            
             isAbove = false;
         }
+        yield return new WaitForSeconds(1f);
+        gravCoroutine = StartCoroutine(Gravity());
+        yield return null;
     }
 
     public void PlayerDimensionChange(Vector3 newPos)
