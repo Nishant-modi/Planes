@@ -6,6 +6,8 @@ using UnityEngine.InputSystem;
 
 public class ThirdPresonMovement : MonoBehaviour
 {
+    public event System.Action OnReachedEndOfLevel;
+
     [SerializeField] private CharacterController controller;
     [SerializeField] private GameObject tpc;
     [SerializeField] private Transform cam;
@@ -35,12 +37,13 @@ public class ThirdPresonMovement : MonoBehaviour
         Check = groundCheck;
         canMove = true;
         gravCoroutine = StartCoroutine(Gravity());
+        Guard.OnGuardHasSpottedPlayer += Disable;
     }
 
     IEnumerator Gravity()
     {
         yield return new WaitForSeconds(0.1f);
-        canMove = true;
+        //canMove = true;
         while (true)
         {
             velocity.y += gravity * Time.deltaTime;
@@ -54,7 +57,7 @@ public class ThirdPresonMovement : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        
+        isGrounded = Physics.CheckSphere(Check.position, groundDistance, groundMask);
 
         if (isAbove)
         {
@@ -73,36 +76,28 @@ public class ThirdPresonMovement : MonoBehaviour
             }
         }
 
-        float horizontal = Input.GetAxisRaw("Horizontal");
-        float vertical = Input.GetAxisRaw("Vertical");
-
-        
-
-        if (Input.GetKeyDown(KeyCode.Space))
+        if (canMove)
         {
-            canMove = false;
-            print("spaced");
-            //StartCoroutine(DimensionChanged());
-            DimensionChanged();
-        }
+            if (Input.GetKeyDown(KeyCode.Space))
+            {
+                DimensionChanged();
+            }
 
-        if(canMove)
-        {
+
+            float horizontal = Input.GetAxisRaw("Horizontal");
+            float vertical = Input.GetAxisRaw("Vertical");
             direction = new Vector3(horizontal, 0f, vertical).normalized;
-        }
 
 
-        isGrounded = Physics.CheckSphere(Check.position, groundDistance, groundMask);
+            if (direction.magnitude > 0.1)
+            {
+                float targetAngle = Mathf.Atan2(direction.x, direction.z) * Mathf.Rad2Deg + cam.eulerAngles.y;
+                float angle = Mathf.SmoothDampAngle(transform.eulerAngles.y, targetAngle, ref turnSmoothVelocity, turnSmoothTime);
+                transform.rotation = Quaternion.Euler(0f, angle, 0f);
 
-
-        if(direction.magnitude > 0.1)
-        {
-            float targetAngle = Mathf.Atan2(direction.x, direction.z) * Mathf.Rad2Deg + cam.eulerAngles.y;
-            float angle = Mathf.SmoothDampAngle(transform.eulerAngles.y,targetAngle,ref turnSmoothVelocity,turnSmoothTime);
-            transform.rotation = Quaternion.Euler(0f, angle, 0f);
-
-            Vector3 moveDir = Quaternion.Euler(0f, targetAngle,0f) * Vector3.forward;
-            controller.Move(moveDir.normalized * speed * Time.deltaTime);
+                Vector3 moveDir = Quaternion.Euler(0f, targetAngle, 0f) * Vector3.forward;
+                controller.Move(moveDir.normalized * speed * Time.deltaTime);
+            }
         }
 
         //velocity.y += gravity * Time.deltaTime;
@@ -113,6 +108,7 @@ public class ThirdPresonMovement : MonoBehaviour
 
     public void DimensionChanged()
     {
+        canMove = false;
         StopCoroutine(gravCoroutine);
         if (!isAbove)
         {
@@ -140,6 +136,7 @@ public class ThirdPresonMovement : MonoBehaviour
         }
         
         gravCoroutine = StartCoroutine(Gravity());
+        canMove = true;
         
         //yield return null;
     }
@@ -160,6 +157,28 @@ public class ThirdPresonMovement : MonoBehaviour
                 break;
             }
         }
+    }
+
+    private void OnTriggerEnter(Collider col)
+    {
+        if(col.tag == "Finish")
+        {
+            Disable();
+            if (OnReachedEndOfLevel != null)
+            {
+                OnReachedEndOfLevel();
+            }
+        }
+    }
+
+    void Disable()
+    {
+        canMove = false;
+    }
+
+    private void OnDestroy()
+    {
+        Guard.OnGuardHasSpottedPlayer -= Disable;
     }
 
 }
