@@ -35,6 +35,7 @@ public class ThirdPresonMovement : MonoBehaviour
     private void Start()
     {
         Check = groundCheck;
+        //Cursor.lockState = CursorLockMode.Locked;
         canMove = true;
         gravCoroutine = StartCoroutine(Gravity());
         Guard.OnGuardHasSpottedPlayer += Disable;
